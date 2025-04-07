@@ -27,7 +27,7 @@ def _get_platform():
 
 
 def _get_architecture():
-    match platform.architecture():
+    match platform.architecture()[0]:
         case "64bit":
             return "x64"
         case "32bit":
@@ -36,10 +36,33 @@ def _get_architecture():
             return "arm64"
 
 
+class GameConfig:
+    def __init__(
+        self,
+        username: str = "player01",
+        launcher_name: str = "clmc",
+        launcher_version: str = "0.1",
+        custom_jvm_args: list | None = None,
+        custom_game_args: list | None = None,
+        legacy_sounds: bool = False,
+    ):
+        self.launcher_name = launcher_name
+        self.launcher_version = launcher_version
+        self.username = username
+        self.custom_jvm_args = custom_jvm_args if custom_jvm_args else []
+        self.custom_game_args = custom_game_args if custom_game_args else []
+        # Legacy sound by using a proxy with sounds
+        self.legacy_sounds = legacy_sounds
+
+
+DEFAULT_GAME_CONFIG = GameConfig()
+
+
 class LauncherConfig:
     def __init__(
         self,
         minecraft_dir: str,
+        game_config: GameConfig = DEFAULT_GAME_CONFIG,
         profile_dir: str = "profiles",
         runtime_dir: str = "runtime",
         versions_dir: str = "versions",
@@ -48,8 +71,9 @@ class LauncherConfig:
         game_dir: str = "game",
         platform=_get_platform(),
         architecture=_get_architecture(),
-    ) -> None:
+    ):
         self.minecraft_dir = minecraft_dir
+        self.game_config = game_config
         # Directories
         self.profile_dir = os.path.join(self.minecraft_dir, profile_dir)
         self.runtime_dir = os.path.join(self.minecraft_dir, runtime_dir)

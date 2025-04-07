@@ -8,9 +8,6 @@ from config import LauncherConfig, DEFAULT_CONFIG
 import subprocess
 import os
 
-LAUNCHER_NAME = "CLIPY"
-LAUNCHER_VERSION = "1.0"
-
 
 def install_version(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
     manifest = VersionManifest(config)
@@ -76,8 +73,9 @@ def launch(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
     jvm_args: list[str] = []
 
     # Legacy sound
-    # jvm_args.append("-Dhttp.proxyHost=betacraft.uk")
-    # jvm_args.append("-Djava.util.Arrays.useLegacyMergeSort=true")
+    if config.game_config.legacy_sounds:
+        jvm_args.append("-Dhttp.proxyHost=betacraft.uk")
+        jvm_args.append("-Djava.util.Arrays.useLegacyMergeSort=true")
 
     for arg in version.jvm_args:
         if isinstance(arg, str):
@@ -88,12 +86,19 @@ def launch(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
         if libraries.check_rules(rules, config):
             jvm_args.append(val)
 
+    # Append the user defined jvm args
+    jvm_args.extend(config.game_config.custom_jvm_args)
+
     for i in range(len(jvm_args)):
         jvm_args[i] = jvm_args[i].replace(
             "${natives_directory}", os.path.join(version_dir, "natives")
         )
-        jvm_args[i] = jvm_args[i].replace("${launcher_name}", LAUNCHER_NAME)
-        jvm_args[i] = jvm_args[i].replace("${launcher_version}", LAUNCHER_VERSION)
+        jvm_args[i] = jvm_args[i].replace(
+            "${launcher_name}", config.game_config.launcher_name
+        )
+        jvm_args[i] = jvm_args[i].replace(
+            "${launcher_version}", config.game_config.launcher_version
+        )
         jvm_args[i] = jvm_args[i].replace("${classpath}", classpath)
 
     game_args: list[str] = []
@@ -106,13 +111,18 @@ def launch(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
         if libraries.check_rules(rules, config):
             game_args.append(val)
 
+    # Append the user defined game args
+    game_args.extend(config.game_config.custom_game_args)
+
     for i in range(len(game_args)):
-        # game_args[i] = game_args[i].replace("${clientid}", "clientid") # TODO: Implement auth - clientid
+        game_args[i] = game_args[i].replace(
+            "${clientid}", "clientid"
+        )  # TODO: Implement auth - clientid
         game_args[i] = game_args[i].replace(
             "${auth_xuid}", "auth_xuid"
         )  # TODO: Implement auth - auth_xuid
         game_args[i] = game_args[i].replace(
-            "${auth_player_name}", "player"
+            "${auth_player_name}", config.game_config.username
         )  # Offline mode
         game_args[i] = game_args[i].replace("${version_name}", version_id)
         game_args[i] = game_args[i].replace(
@@ -135,7 +145,7 @@ def launch(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
         game_args[i] = game_args[i].replace(
             "${version_type}", version.version.type
         )  # TODO: Modded update the name
-        game_args[i] = game_args[i].replace("${quickPlayos.path.", "logs")
+        game_args[i] = game_args[i].replace("${quickPlayPath}", "logs")
 
     print(game_args)
     print(jvm_args)
