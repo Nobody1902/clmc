@@ -6,10 +6,8 @@
 
 ## Installation
 
-- Firstly, install the required libraries (tqdm, requests)
-- `pip install -r requirements.txt` or do it manually.
-- Then use main.py to install and launch minecraft
-- `python main.py 1.21.5`
+- Firstly, install the required libraries (tqdm, requests) with `pip install -r requirements.txt` or do it manually.
+- Then use main.py to install and launch minecraft (eg. `python main.py 1.21.5`)
 
 ## Credits
 
