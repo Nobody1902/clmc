@@ -1,7 +1,8 @@
 import zipfile
 import requests
+from progress import ProgressBar
 
-from tqdm import tqdm
+# from tqdm import tqdm
 import os
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -12,17 +13,16 @@ def download_file(url: str, dest_path: str, keep_bar: bool = True):
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     try:
         response = requests.get(url, stream=True)
-        total_size = int(response.headers.get("content-length", 0))
+        total_size = int(response.headers.get("Content-length", 0))
+
+        if total_size == 0:
+            with requests.get(url, stream=True) as size_resp:
+                total_size = sum(len(chunk) for chunk in size_resp.iter_content(8196))
 
         with (
             open(dest_path, "wb") as file,
-            tqdm(
-                desc=os.path.basename(dest_path),
-                total=total_size,
-                unit="B",
-                unit_scale=True,
-                unit_divisor=1024,
-                leave=keep_bar,
+            ProgressBar(
+                os.path.basename(dest_path), max=total_size, unit="B", keep=keep_bar
             ) as bar,
         ):
             for data in response.iter_content(chunk_size=1024):
@@ -35,15 +35,17 @@ def download_file(url: str, dest_path: str, keep_bar: bool = True):
 
 def download_files(urls: list[str], files: list[str], desc: str = "Downloading"):
     """Download multiple files in parallel with a progress bar."""
-    with tqdm(total=len(urls), desc=desc) as overall_bar:
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = {
-                executor.submit(download_file, url, path, False): path
-                for url, path in zip(urls, files)
-            }
-            for future in as_completed(futures):
-                future.result()
-                overall_bar.update(1)
+    with (
+        ProgressBar(desc, max=len(urls)) as overall_bar,
+        ThreadPoolExecutor(max_workers=10) as executor,
+    ):
+        futures = {
+            executor.submit(download_file, url, path, False): path
+            for url, path in zip(urls, files)
+        }
+        for future in as_completed(futures):
+            future.result()
+            overall_bar.update(1)
 
 
 def get_jar_mainclass(jar: str):
