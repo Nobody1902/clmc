@@ -40,10 +40,10 @@ def parse_rules(rules_json):
     return rules
 
 
-def parse_libraries(raw_version: list):
+def parse_libraries(raw_version: dict):
     natives = []
     libraries = []
-    for lib in raw_version["libraries"]:  # pyright: ignore
+    for lib in raw_version["libraries"]:
         # Parse natives
         split_name = lib["name"].split(":")
         if len(split_name) > 3:
@@ -89,7 +89,7 @@ def parse_libraries(raw_version: list):
     return (libraries, natives)
 
 
-def parse_jvm_arguments(raw_version: list):
+def parse_jvm_arguments(raw_version: dict):
     jvm_args = []
 
     if "arguments" not in raw_version:
@@ -98,7 +98,7 @@ def parse_jvm_arguments(raw_version: list):
         jvm_args.append("${classpath}")
         return jvm_args
 
-    for arg in raw_version["arguments"]["jvm"]:  # pyright: ignore
+    for arg in raw_version["arguments"]["jvm"]:
         if isinstance(arg, str):
             jvm_args.append(arg)
             continue
@@ -116,14 +116,14 @@ def parse_jvm_arguments(raw_version: list):
     return jvm_args
 
 
-def parse_game_arguments(raw_version: list):
+def parse_game_arguments(raw_version: dict):
     game_args = []
 
     if "arguments" not in raw_version:
-        game_args = raw_version["minecraftArguments"].split(" ")  # pyright: ignore
+        game_args = raw_version["minecraftArguments"].split(" ")
         return game_args
 
-    for arg in raw_version["arguments"]["game"]:  # pyright: ignore
+    for arg in raw_version["arguments"]["game"]:
         if isinstance(arg, str):
             game_args.append(arg)
             continue
