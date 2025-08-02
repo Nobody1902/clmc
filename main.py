@@ -12,6 +12,8 @@ config.game_config = game_config
 # config.platform = "windows-x64"
 # config.platform_clean = "windows"
 
-if len(sys.argv) > 1:
-    launcher.install_version(sys.argv[1], config=config)
-    launcher.launch(sys.argv[1], config=config)
+if len(sys.argv) > 2:
+    if sys.argv[1] == "install":
+        launcher.install_version(sys.argv[2], config=config)
+    elif sys.argv[1] == "launch":
+        launcher.launch(sys.argv[2], config=config)

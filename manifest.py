@@ -20,6 +20,9 @@ class ManifestVersion:
         self.time = time
         self.release_time = release_time
 
+    def _download(self, path: str):
+        download_file(self.url, path)
+
     def __repr__(self) -> str:
         return self.__str__()
 
@@ -36,7 +39,7 @@ class ManifestVersion:
 
 
 class VersionManifest:
-    versions: list[ManifestVersion] | list[str]
+    versions: list[ManifestVersion]
 
     latest_relase: str
     latest_snapshot: str
@@ -66,12 +69,12 @@ class VersionManifest:
         if isinstance(i, int):
             return self.versions[i]
         elif isinstance(i, str):
-            if i == "latest_relase":
-                return self.latest_relase
-            elif i == "latest_snapshot":
-                return self.latest_snapshot
+            for version in self.versions:
+                if version.id == i:
+                    return version
+            raise KeyError(f"Version with ID '{i}' not found.")
 
-            return next((x for x in self.versions if x == i), None)
+        raise TypeError("Index must be an integer or a string.")
 
     def _download_version_manifest(self):
         download_file(VERSION_MANIFEST, self.config.version_manifest)

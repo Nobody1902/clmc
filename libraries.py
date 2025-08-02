@@ -103,7 +103,9 @@ def download_libraries(libraries, config: LauncherConfig = DEFAULT_CONFIG):
     download_files(urls, paths, desc="Downloading libraries")
 
 
-def download_natives(natives, version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
+def download_natives(
+    natives, version_name: str, config: LauncherConfig = DEFAULT_CONFIG
+):
     urls = []
     paths = []
 
@@ -124,7 +126,7 @@ def download_natives(natives, version_id: str, config: LauncherConfig = DEFAULT_
                 jar.extractall(os.path.join(tmpdir, nat_path[: len(nat_path) - 4]))
 
             natives_dir = os.path.join(
-                config.versions_dir, config.platform, version_id, "natives/"
+                config.versions_dir, config.platform, version_name, "natives/"
             )
             os.makedirs(natives_dir, exist_ok=True)
 

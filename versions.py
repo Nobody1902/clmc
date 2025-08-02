@@ -142,7 +142,8 @@ def parse_game_arguments(raw_version: dict):
 
 
 class Version:
-    version: manifest.ManifestVersion
+    version_id: str
+    version_name: str
     game_args: list[str]
     jvm_args: list
     asset_index: str
@@ -156,25 +157,21 @@ class Version:
 
     def __init__(
         self,
-        version: manifest.ManifestVersion,
+        version_name: str,
         config: LauncherConfig = DEFAULT_CONFIG,
-        silent: bool = False,
     ):
-        self.version = version
+        self.version_name = version_name
         self.config = config
         self.version_dir = os.path.join(
-            config.versions_dir, config.platform, str(self.version)
+            config.versions_dir, config.platform, version_name
         )
-        self.version_manifest = os.path.join(
-            self.version_dir, f"{str(self.version)}.json"
-        )
-
-        if not os.path.exists(self.version_manifest):
-            self._download_version_manifest()
+        self.version_manifest = os.path.join(self.version_dir, f"{version_name}.json")
 
         raw_version = None
         with open(self.version_manifest, "r") as vm:
             raw_version = json.loads(vm.read())
+
+        self.version_id = raw_version["id"]
 
         self.asset_json_url = raw_version["assetIndex"]["url"]
         self.asset_index = raw_version["assetIndex"]["id"]
@@ -196,16 +193,8 @@ class Version:
 
         self.libraries, self.natives = parse_libraries(raw_version)
 
-        if silent:
-            shutil.rmtree(self.version_dir)
-
-    def _download_version_manifest(self):
-        download_file(self.version.url, self.version_manifest)
-
     def __eq__(self, value: object, /) -> bool:
-        if isinstance(value, str) or isinstance(value, manifest.ManifestVersion):
-            return self.version == value
         if isinstance(value, Version):
-            return self.version == value.version
+            return self.version_name == value.version_name
 
         return False

@@ -1,3 +1,4 @@
 .minecraft
 .venv
 __pycache__
+*.jar

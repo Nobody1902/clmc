@@ -9,20 +9,14 @@ import subprocess
 import os
 
 
-def install_version(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
-    manifest = VersionManifest(config)
+def _install(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
+    version_dir = os.path.join(config.versions_dir, config.platform, version_name)
 
-    if version_id not in manifest.versions:
-        print("This version doesn't exist!")
-        return -1
-
-    version_dir = os.path.join(config.versions_dir, config.platform, version_id)
-    if os.path.exists(version_dir):
-        print("Version is already installed!")
+    if os.path.exists(os.path.join(version_dir, "client.jar")):
+        print("Version is already installed.")
         return 0
 
-    print(f"Installing {version_id}")
-    version = versions.Version(manifest[version_id], config)  # pyright: ignore
+    version = versions.Version(version_name)
     download_file(version.client_url, os.path.join(version_dir, "client.jar"))
     if version.server_url:
         download_file(version.server_url, os.path.join(version_dir, "server.jar"))
@@ -32,24 +26,39 @@ def install_version(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
     assets.download_assets(version.asset_index, version.asset_json_url, config)
 
     libraries.download_libraries(version.libraries, config)
-    libraries.download_natives(version.natives, version_id, config)
-
-    print(f"Successfully installed {version_id}")
+    libraries.download_natives(version.natives, version_name, config)
 
 
-def launch(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
+def install_version(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
     manifest = VersionManifest(config)
 
     if version_id not in manifest.versions:
         print("This version doesn't exist!")
         return -1
 
-    version_dir = os.path.join(config.versions_dir, config.platform, version_id)
+    print(f"Installing {version_id}")
+
+    manifest[version_id]._download(
+        os.path.join(
+            config.versions_dir,
+            config.platform,
+            version_id,
+            f"{version_id}.json",
+        )
+    )
+
+    _install(f"{version_id}", config)
+
+    print(f"Successfully installed {version_id}")
+
+
+def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
+    version_dir = os.path.join(config.versions_dir, config.platform, version_name)
     if not os.path.exists(version_dir):
         print("Version is not installed!")
         return -1
 
-    version = versions.Version(manifest[version_id], config)  # pyright: ignore
+    version = versions.Version(version_name, config)
 
     java_exe = os.path.join(
         config.runtime_dir,
@@ -124,9 +133,9 @@ def launch(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
         game_args[i] = game_args[i].replace(
             "${auth_player_name}", config.game_config.username
         )  # Offline mode
-        game_args[i] = game_args[i].replace("${version_name}", version_id)
+        game_args[i] = game_args[i].replace("${version_name}", version_name)
         game_args[i] = game_args[i].replace(
-            "${game_directory}", os.path.join(config.game_dir, version_id)
+            "${game_directory}", os.path.join(config.game_dir, version_name)
         )
         game_args[i] = game_args[i].replace("${assets_root}", config.assets_dir)
         game_args[i] = game_args[i].replace("${assets_index_name}", version.asset_index)
@@ -143,16 +152,16 @@ def launch(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
             "${user_properties}", "user_properties"
         )  # TODO: Figure out what this does (1.8 only?)
         game_args[i] = game_args[i].replace(
-            "${version_type}", version.version.type
+            "${version_type}", version_name
         )  # TODO: Modded update the name
         game_args[i] = game_args[i].replace("${quickPlayPath}", "logs")
 
     print(game_args)
     print(jvm_args)
-    os.makedirs(os.path.join(config.game_dir, version_id), exist_ok=True)
+    os.makedirs(os.path.join(config.game_dir, version_name), exist_ok=True)
 
     # Launch the game
     subprocess.call(
         [java_exe, *jvm_args, version.main_class, *game_args],
-        cwd=os.path.join(config.game_dir, version_id),
+        cwd=os.path.join(config.game_dir, version_name),
     )
