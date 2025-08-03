@@ -55,3 +55,14 @@ def get_jar_mainclass(jar: str):
     for line in lines:
         if line.startswith("Main-Class: "):
             return line.removeprefix("Main-Class: ").replace("\n", "")
+
+
+def remove_duplicates(input: list):
+    seen = []
+    result = []
+    for item in input:
+        if item not in seen:
+            seen.append(item)
+            result.append(item)
+
+    return result

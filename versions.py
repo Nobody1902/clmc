@@ -1,9 +1,6 @@
 from config import LauncherConfig, DEFAULT_CONFIG
 from libraries import Library, Native, Rule
-import manifest
-from util import download_file
 import json
-import shutil
 import os
 
 
@@ -40,22 +37,60 @@ def parse_rules(rules_json):
     return rules
 
 
+def get_lib_url(lib: dict):
+    if "downloads" in lib:
+        return lib["downloads"]["artifact"]["url"]
+
+    url: str = lib.get("url", "https://libraries.minecraft.net").removesuffix("/")
+
+    path, libname, version = str(lib["name"]).split(":")
+
+    return f"{url}/{path.replace('.', '/')}/{libname}/{version}/{libname}-{version}.jar"
+
+
+def join_libs(libs1: list[Library] | list[Native], libs2: list[Library] | list[Native]):
+    combined_libs = {}
+
+    for lib in libs1:
+        combined_libs[lib.name] = lib
+
+    for lib in libs2:
+        combined_libs[lib.name] = lib
+
+    return list(combined_libs.values())
+
+
+def get_lib_path(lib: dict):
+    if "downloads" in lib:
+        return lib["downloads"]["artifact"]["path"]
+
+    path, libname, version = str(lib["name"]).split(":")
+
+    return f"{path.replace('.', '/')}/{libname}/{version}/{libname}-{version}.jar"
+
+
 def parse_libraries(raw_version: dict):
     natives = []
     libraries = []
+
+    if "libraries" not in raw_version:
+        return (None, None)
+
     for lib in raw_version["libraries"]:
         # Parse natives
         split_name = lib["name"].split(":")
         if len(split_name) > 3:
             if "natives" in split_name[3]:
-                url = lib["downloads"]["artifact"]["url"]
+                url = get_lib_url(lib)
                 rules = []
                 if "rules" in lib:
                     rules = parse_rules(lib["rules"])
 
                 native_platform = split_name[3].replace("natives-", "")
 
-                natives.append(Native(url, lib["name"], native_platform, rules))
+                natives.append(
+                    Native(split_name[1], split_name[-1], url, native_platform, rules)
+                )
                 continue
 
         if "natives" in lib:
@@ -71,20 +106,22 @@ def parse_libraries(raw_version: dict):
                 if "rules" in lib:
                     rules = parse_rules(lib["rules"])
 
-                natives.append(Native(url, lib["name"], nat_name, rules))
+                natives.append(
+                    Native(split_name[1], split_name[-1], url, nat_name, rules)
+                )
 
             continue
 
         # Parse libraries
-        url = lib["downloads"]["artifact"]["url"]
-        lib_path = lib["downloads"]["artifact"]["path"]
+        url = get_lib_url(lib)
+        lib_path = get_lib_path(lib)
 
         rules = []
 
         if "rules" in lib:
             rules = parse_rules(lib["rules"])
 
-        libraries.append(Library(url, lib_path, rules))
+        libraries.append(Library(split_name[1], split_name[-1], url, lib_path, rules))
 
     return (libraries, natives)
 
@@ -92,11 +129,11 @@ def parse_libraries(raw_version: dict):
 def parse_jvm_arguments(raw_version: dict):
     jvm_args = []
 
-    if "arguments" not in raw_version:
-        jvm_args.append("-Djava.library.path=${natives_directory}")
-        jvm_args.append("-cp")
-        jvm_args.append("${classpath}")
-        return jvm_args
+    if "arguments" not in raw_version or "jvm" not in raw_version["arguments"]:
+        # jvm_args.append("-Djava.library.path=${natives_directory}")
+        # jvm_args.append("-cp")
+        # jvm_args.append("${classpath}")
+        return None
 
     for arg in raw_version["arguments"]["jvm"]:
         if isinstance(arg, str):
@@ -119,7 +156,9 @@ def parse_jvm_arguments(raw_version: dict):
 def parse_game_arguments(raw_version: dict):
     game_args = []
 
-    if "arguments" not in raw_version:
+    if "arguments" not in raw_version or "game" not in raw_version["arguments"]:
+        if "minecraftArguments" not in raw_version:
+            return None
         game_args = raw_version["minecraftArguments"].split(" ")
         return game_args
 
@@ -145,7 +184,7 @@ class Version:
     version_id: str
     version_name: str
     game_args: list[str]
-    jvm_args: list
+    jvm_args: list[tuple[str, list[Rule]]]
     asset_index: str
     asset_json_url: str
     client_url: str
@@ -173,25 +212,65 @@ class Version:
 
         self.version_id = raw_version["id"]
 
-        self.asset_json_url = raw_version["assetIndex"]["url"]
-        self.asset_index = raw_version["assetIndex"]["id"]
-        self.client_url = raw_version["downloads"]["client"]["url"]
-        if "server" in raw_version["downloads"]:
-            self.server_url = raw_version["downloads"]["server"]["url"]
-        else:
-            self.server_url = None
+        asset_json_url = raw_version.get("assetIndex", {}).get("url", None)
+        asset_index = raw_version.get("assetIndex", {}).get("id", None)
+        client_url = raw_version.get("downloads", {}).get("client", {}).get("url", None)
+        server_url = raw_version.get("downloads", {}).get("server", {}).get("url", None)
 
-        if "javaVersion" in raw_version:
-            self.java_version = raw_version["javaVersion"]["component"]
-        else:
-            self.java_version = "jre-legacy"
+        java_version = raw_version.get("javaVersion", {}).get("component", None)
 
-        self.main_class = raw_version["mainClass"]
+        main_class = raw_version.get("mainClass", None)
 
-        self.jvm_args = parse_jvm_arguments(raw_version)
-        self.game_args = parse_game_arguments(raw_version)
+        jvm_args = parse_jvm_arguments(raw_version)
+        game_args = parse_game_arguments(raw_version)
 
-        self.libraries, self.natives = parse_libraries(raw_version)
+        libraries, natives = parse_libraries(raw_version)
+
+        if "inheritsFrom" in raw_version:
+            inherit_version = raw_version["inheritsFrom"]
+            v = Version(inherit_version)
+
+            asset_json_url = (
+                asset_json_url if asset_json_url is not None else v.asset_json_url
+            )
+            asset_index = asset_index if asset_index is not None else v.asset_index
+            client_url = client_url if client_url is not None else v.client_url
+            server_url = server_url if server_url is not None else v.server_url
+            java_version = java_version if java_version is not None else v.java_version
+            main_class = main_class if main_class is not None else v.main_class
+            jvm_args = jvm_args + v.jvm_args if jvm_args is not None else v.jvm_args
+            game_args = (
+                game_args + v.game_args if game_args is not None else v.game_args
+            )
+            libraries = (
+                join_libs(v.libraries, libraries)
+                if libraries is not None
+                else v.libraries
+            )
+            natives = v.natives + natives if natives is not None else v.natives
+            print(natives)
+
+        assert asset_json_url is not None
+        assert asset_index is not None
+        assert client_url is not None
+        assert server_url is not None
+        assert java_version is not None
+        assert main_class is not None
+        assert jvm_args is not None
+        assert game_args is not None
+        assert libraries is not None
+        assert natives is not None
+
+        self.asset_json_url = asset_json_url
+        self.asset_index = asset_index
+        self.client_url = client_url
+        self.server_url = server_url
+        self.java_version = java_version
+        self.main_class = main_class
+        self.jvm_args = jvm_args
+        self.game_args = game_args
+        self.libraries = libraries
+        self.natives = natives
 
     def __eq__(self, value: object, /) -> bool:
         if isinstance(value, Version):

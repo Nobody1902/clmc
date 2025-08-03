@@ -1,4 +1,4 @@
-from util import download_file
+from util import download_file, remove_duplicates
 from manifest import VersionManifest
 import versions
 import java
@@ -70,7 +70,7 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
     classpath_sep = ";" if config.platform.startswith("windows") else ":"
     classpath = ""
 
-    for lib in version.libraries:
+    for lib in set(version.libraries):
         if not libraries.check_rules(lib.rules, config):
             continue
         classpath += (
@@ -86,7 +86,7 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
         jvm_args.append("-Dhttp.proxyHost=betacraft.uk")
         jvm_args.append("-Djava.util.Arrays.useLegacyMergeSort=true")
 
-    for arg in version.jvm_args:
+    for arg in remove_duplicates(version.jvm_args):
         if isinstance(arg, str):
             jvm_args.append(arg)
             continue

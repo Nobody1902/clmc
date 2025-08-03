@@ -23,11 +23,15 @@ class Rule:
 
 
 class Library:
+    name: str
+    version: str
     url: str
     path: str
     rules: list[Rule]
 
-    def __init__(self, url: str, path: str, rules=[]) -> None:
+    def __init__(self, name: str, version: str, url: str, path: str, rules=[]) -> None:
+        self.name = name
+        self.version = version
         self.url = url
         self.path = path
         self.rules = rules
@@ -36,12 +40,16 @@ class Library:
 class Native:
     url: str
     name: str
+    version: str
     platform: str
     rules: list[Rule]
 
-    def __init__(self, url: str, name: str, platform: str, rules=[]) -> None:
-        self.url = url
+    def __init__(
+        self, name: str, version: str, url: str, platform: str, rules=[]
+    ) -> None:
         self.name = name
+        self.version = version
+        self.url = url
         self.rules = rules
         self.platform = platform
 
@@ -104,13 +112,18 @@ def download_libraries(libraries, config: LauncherConfig = DEFAULT_CONFIG):
 
 
 def download_natives(
-    natives, version_name: str, config: LauncherConfig = DEFAULT_CONFIG
+    natives: list[Native], version_name: str, config: LauncherConfig = DEFAULT_CONFIG
 ):
     urls = []
     paths = []
 
+    print(version_name)
+    print()
+
     with tempfile.TemporaryDirectory() as tmpdir:
         for native in natives:
+            print(native.name)
+            print(native.platform)
             if native.platform == config.platform_clean and check_rules(
                 native.rules, config
             ):
@@ -121,7 +134,10 @@ def download_natives(
 
         download_files(urls, paths, desc="Downloading natives")
 
+        print()
+        print(paths)
         for nat_path in paths:
+            print(nat_path)
             with ZipFile(nat_path, "r") as jar:
                 jar.extractall(os.path.join(tmpdir, nat_path[: len(nat_path) - 4]))
 
@@ -129,8 +145,10 @@ def download_natives(
                 config.versions_dir, config.platform, version_name, "natives/"
             )
             os.makedirs(natives_dir, exist_ok=True)
+            print(f"Natives dir: {natives_dir}")
 
             for f in Path(nat_path[: len(nat_path) - 4]).glob("**/*"):
+                print(f)
                 file = os.path.join(nat_path[: len(nat_path) - 4], f)
                 if not os.path.isfile(file):
                     continue
