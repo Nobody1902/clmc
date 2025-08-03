@@ -66,7 +66,7 @@ def get_lib_path(lib: dict):
 
     path, libname, version = str(lib["name"]).split(":")
 
-    return f"{path.replace('.', '/')}/{libname}/{version}/{libname}-{version}.jar"
+    return os.path.join(*path.split("."), libname, version, f"{libname}-{version}.jar")
 
 
 def parse_libraries(raw_version: dict):

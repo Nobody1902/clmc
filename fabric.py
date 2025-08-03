@@ -1,5 +1,6 @@
 import os
 import shutil
+import json
 import subprocess
 import tempfile
 from config import DEFAULT_CONFIG, LauncherConfig
@@ -14,6 +15,14 @@ FABRIC_INSTALLER_VERSIONS = (
 )
 
 
+def _download_loader_versions(config: LauncherConfig = DEFAULT_CONFIG):
+    download_file(FABRIC_LOADERS_MANIFEST, config.fabric_loaders)
+
+
+def _download_minecraft_versions(config: LauncherConfig = DEFAULT_CONFIG):
+    download_file(FABRIC_MINECRAFT_MANIFEST, config.fabric_minecraft_versions)
+
+
 def _download_installer_versions(config: LauncherConfig = DEFAULT_CONFIG):
     download_file(FABRIC_INSTALLER_VERSIONS, config.fabric_installers)
 
@@ -25,12 +34,51 @@ def _download_installer(installer_version: str, path: str):
     )
 
 
+def get_supported_versions(config: LauncherConfig = DEFAULT_CONFIG):
+    _download_minecraft_versions(config)
+
+    supported_versions = None
+    with open(config.fabric_minecraft_versions) as f:
+        supported_versions = json.load(f)
+
+    return [v["version"] for v in supported_versions]
+
+
+def get_loaders(config: LauncherConfig = DEFAULT_CONFIG):
+    _download_loader_versions(config)
+    supported_loaders = None
+    with open(config.fabric_loaders) as f:
+        supported_loaders = json.load(f)
+
+    return [v["version"] for v in supported_loaders]
+
+
+def supported_version(minecraft_version: str, config: LauncherConfig = DEFAULT_CONFIG):
+    supported_versions = get_supported_versions(config)
+
+    return minecraft_version in supported_versions
+
+
+def supported_loader(loader_version: str, config: LauncherConfig = DEFAULT_CONFIG):
+    supported_loaders = get_loaders(config)
+
+    return loader_version in supported_loaders
+
+
 def install(
     minecraft_version: str,
-    loader_version: str = "",
+    loader_version: str | None = None,
     config: LauncherConfig = DEFAULT_CONFIG,
 ):
     # TODO: Check if version is supported
+    assert supported_version(minecraft_version, config)
+    if loader_version:
+        assert supported_loader(loader_version, config)
+    else:
+        loader_versions = get_loaders(config)
+        loader_version = loader_versions[0]
+
+    assert loader_version is not None
 
     version = launcher.install_version(minecraft_version, config)
 
