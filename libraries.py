@@ -139,7 +139,6 @@ def download_natives(
             os.makedirs(natives_dir, exist_ok=True)
 
             for f in Path(nat_path[: len(nat_path) - 4]).glob("**/*"):
-                print(f)
                 file = os.path.join(nat_path[: len(nat_path) - 4], f)
                 if not os.path.isfile(file):
                     continue

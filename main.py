@@ -13,12 +13,11 @@ config.game_config = game_config
 # config.platform = "windows-x64"
 # config.platform_clean = "windows"
 
-# version_name = fabric.install("1.21.8", config=config)
-# launcher.launch(version_name, config)
 if len(sys.argv) > 2:
     if sys.argv[1] == "install":
         launcher.install_version(sys.argv[2], config=config)
     elif sys.argv[1] == "launch":
         launcher.launch(sys.argv[2], config=config)
     elif sys.argv[1] == "fabric":
-        fabric.install(sys.argv[2], config=config)
+        version = fabric.install(sys.argv[2], config=config)
+        print(version)
