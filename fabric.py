@@ -1,4 +1,3 @@
-import json
 import os
 import shutil
 import subprocess
@@ -26,14 +25,16 @@ def _download_installer(installer_version: str, path: str):
     )
 
 
-def _install(
+def install(
     minecraft_version: str,
     loader_version: str = "",
     config: LauncherConfig = DEFAULT_CONFIG,
 ):
     # TODO: Check if version is supported
 
-    launcher.install_version(minecraft_version, config)
+    version = launcher.install_version(minecraft_version, config)
+
+    assert version is not None
 
     _download_installer_versions(config)
 
@@ -53,7 +54,13 @@ def _install(
 
         subprocess.run(
             [
-                config.java,
+                os.path.join(
+                    config.runtime_dir,
+                    config.platform,
+                    version.java_version,
+                    "bin",
+                    "java",
+                ),
                 "-jar",
                 installer,
                 "client",

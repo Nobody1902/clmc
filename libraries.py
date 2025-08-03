@@ -117,13 +117,8 @@ def download_natives(
     urls = []
     paths = []
 
-    print(version_name)
-    print()
-
     with tempfile.TemporaryDirectory() as tmpdir:
         for native in natives:
-            print(native.name)
-            print(native.platform)
             if native.platform == config.platform_clean and check_rules(
                 native.rules, config
             ):
@@ -134,10 +129,7 @@ def download_natives(
 
         download_files(urls, paths, desc="Downloading natives")
 
-        print()
-        print(paths)
         for nat_path in paths:
-            print(nat_path)
             with ZipFile(nat_path, "r") as jar:
                 jar.extractall(os.path.join(tmpdir, nat_path[: len(nat_path) - 4]))
 
@@ -145,7 +137,6 @@ def download_natives(
                 config.versions_dir, config.platform, version_name, "natives/"
             )
             os.makedirs(natives_dir, exist_ok=True)
-            print(f"Natives dir: {natives_dir}")
 
             for f in Path(nat_path[: len(nat_path) - 4]).glob("**/*"):
                 print(f)

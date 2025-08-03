@@ -9,14 +9,17 @@ import subprocess
 import os
 
 
-def _install(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
+def _install(
+    version_name: str, config: LauncherConfig = DEFAULT_CONFIG
+) -> versions.Version:
     version_dir = os.path.join(config.versions_dir, config.platform, version_name)
+
+    version = versions.Version(version_name)
 
     if os.path.exists(os.path.join(version_dir, "client.jar")):
         print("Version is already installed.")
-        return 0
+        return version
 
-    version = versions.Version(version_name)
     download_file(version.client_url, os.path.join(version_dir, "client.jar"))
     if version.server_url:
         download_file(version.server_url, os.path.join(version_dir, "server.jar"))
@@ -28,13 +31,17 @@ def _install(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
     libraries.download_libraries(version.libraries, config)
     libraries.download_natives(version.natives, version_name, config)
 
+    return version
 
-def install_version(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
+
+def install_version(
+    version_id: str, config: LauncherConfig = DEFAULT_CONFIG
+) -> versions.Version | None:
     manifest = VersionManifest(config)
 
     if version_id not in manifest.versions:
         print("This version doesn't exist!")
-        return -1
+        return
 
     print(f"Installing {version_id}")
 
@@ -47,9 +54,11 @@ def install_version(version_id: str, config: LauncherConfig = DEFAULT_CONFIG):
         )
     )
 
-    _install(f"{version_id}", config)
+    version = _install(f"{version_id}", config)
 
     print(f"Successfully installed {version_id}")
+
+    return version
 
 
 def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
@@ -86,14 +95,19 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
         jvm_args.append("-Dhttp.proxyHost=betacraft.uk")
         jvm_args.append("-Djava.util.Arrays.useLegacyMergeSort=true")
 
-    for arg in remove_duplicates(version.jvm_args):
-        if isinstance(arg, str):
-            jvm_args.append(arg)
-            continue
+    if not version.jvm_args:
+        jvm_args.append("-Djava.library.path=${natives_directory}")
+        jvm_args.append("-cp")
+        jvm_args.append("${classpath}")
+    else:
+        for arg in remove_duplicates(version.jvm_args):
+            if isinstance(arg, str):
+                jvm_args.append(arg)
+                continue
 
-        val, rules = arg
-        if libraries.check_rules(rules, config):
-            jvm_args.append(val)
+            val, rules = arg
+            if libraries.check_rules(rules, config):
+                jvm_args.append(val)
 
     # Append the user defined jvm args
     jvm_args.extend(config.game_config.custom_jvm_args)

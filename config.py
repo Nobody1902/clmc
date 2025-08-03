@@ -71,7 +71,6 @@ class LauncherConfig:
         game_dir: str = "game",
         platform=_get_platform(),
         architecture=_get_architecture(),
-        java="java",
     ):
         self.minecraft_dir = minecraft_dir
         self.game_config = game_config
@@ -102,7 +101,6 @@ class LauncherConfig:
             self.platform.replace("-x64", "").replace("-x86", "").replace("-arm64", "")
         )
         self.architecture = architecture
-        self.java = java
 
     minecraft_dir: str
     profile_dir: str

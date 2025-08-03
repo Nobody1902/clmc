@@ -130,9 +130,6 @@ def parse_jvm_arguments(raw_version: dict):
     jvm_args = []
 
     if "arguments" not in raw_version or "jvm" not in raw_version["arguments"]:
-        # jvm_args.append("-Djava.library.path=${natives_directory}")
-        # jvm_args.append("-cp")
-        # jvm_args.append("${classpath}")
         return None
 
     for arg in raw_version["arguments"]["jvm"]:
@@ -184,7 +181,7 @@ class Version:
     version_id: str
     version_name: str
     game_args: list[str]
-    jvm_args: list[tuple[str, list[Rule]]]
+    jvm_args: list[tuple[str, list[Rule]]] | None
     asset_index: str
     asset_json_url: str
     client_url: str
@@ -238,7 +235,12 @@ class Version:
             server_url = server_url if server_url is not None else v.server_url
             java_version = java_version if java_version is not None else v.java_version
             main_class = main_class if main_class is not None else v.main_class
-            jvm_args = jvm_args + v.jvm_args if jvm_args is not None else v.jvm_args
+
+            if jvm_args and v.jvm_args:
+                jvm_args = jvm_args + v.jvm_args
+            else:
+                jvm_args = v.jvm_args
+
             game_args = (
                 game_args + v.game_args if game_args is not None else v.game_args
             )
@@ -248,7 +250,6 @@ class Version:
                 else v.libraries
             )
             natives = v.natives + natives if natives is not None else v.natives
-            print(natives)
 
         assert asset_json_url is not None
         assert asset_index is not None
@@ -256,7 +257,6 @@ class Version:
         assert server_url is not None
         assert java_version is not None
         assert main_class is not None
-        assert jvm_args is not None
         assert game_args is not None
         assert libraries is not None
         assert natives is not None
