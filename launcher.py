@@ -10,13 +10,13 @@ import os
 
 
 def _install(
-    version_name: str, config: LauncherConfig = DEFAULT_CONFIG
+    version_name: str, config: LauncherConfig = DEFAULT_CONFIG, overwrite: bool = False
 ) -> versions.Version:
     version_dir = os.path.join(config.versions_dir, config.platform, version_name)
 
     version = versions.Version(version_name)
 
-    if os.path.exists(os.path.join(version_dir, "client.jar")):
+    if os.path.exists(os.path.join(version_dir, "client.jar")) and not overwrite:
         print("Version is already installed.")
         return version
 
@@ -86,6 +86,17 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
             os.path.join(config.library_dir, config.platform, lib.path) + classpath_sep
         )
 
+    if version.inherit_version:
+        classpath += (
+            os.path.join(
+                config.versions_dir,
+                config.platform,
+                version.inherit_version,
+                "client.jar",
+            )
+            + classpath_sep
+        )
+
     classpath += os.path.join(version_dir, "client.jar")
 
     jvm_args: list[str] = []
@@ -124,10 +135,17 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
         )
         jvm_args[i] = jvm_args[i].replace("${classpath}", classpath)
 
+        # Forge
+        jvm_args[i] = jvm_args[i].replace("${library_directory}", config.library_dir)
+        jvm_args[i] = jvm_args[i].replace("${classpath_separator}", classpath_sep)
+        jvm_args[i] = jvm_args[i].replace("${version_name}", version.version_id)
+
     game_args: list[str] = []
-    for arg in version.game_args:
+    for arg, value in version.game_args.items():
         if isinstance(arg, str):
             game_args.append(arg)
+            if value is not None:
+                game_args.append(str(value))
             continue
 
         val, rules = arg  # pyright: ignore
@@ -165,13 +183,11 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
         game_args[i] = game_args[i].replace(
             "${user_properties}", "user_properties"
         )  # TODO: Figure out what this does (1.8 only?)
-        game_args[i] = game_args[i].replace(
-            "${version_type}", version_name
-        )  # TODO: Modded update the name
+        game_args[i] = game_args[i].replace("${version_type}", version_name)
         game_args[i] = game_args[i].replace("${quickPlayPath}", "logs")
 
-    print(game_args)
     print(jvm_args)
+    print(game_args)
     os.makedirs(os.path.join(config.game_dir, version_name), exist_ok=True)
 
     # Launch the game

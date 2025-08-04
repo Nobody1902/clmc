@@ -7,8 +7,12 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-def download_file(url: str, dest_path: str, keep_bar: bool = True):
+def download_file(
+    url: str, dest_path: str, keep_bar: bool = True, overwrite: bool = False
+):
     """Download a single file from a URL."""
+    if os.path.exists(dest_path) and not overwrite:
+        return
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     try:
         response = requests.get(url, stream=True)
@@ -66,3 +70,12 @@ def remove_duplicates(input: list):
             result.append(item)
 
     return result
+
+
+def zipfile_exists(zf: zipfile.ZipFile, path: str):
+    file_list = zf.namelist()
+    return (
+        path in file_list
+        or path.endswith("/")
+        and any(f.startswith(path) for f in file_list)
+    )

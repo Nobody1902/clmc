@@ -70,7 +70,6 @@ def install(
     loader_version: str | None = None,
     config: LauncherConfig = DEFAULT_CONFIG,
 ):
-    # TODO: Check if version is supported
     assert supported_version(minecraft_version, config)
     if loader_version:
         assert supported_loader(loader_version, config)

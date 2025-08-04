@@ -102,7 +102,7 @@ def download_libraries(libraries, config: LauncherConfig = DEFAULT_CONFIG):
     paths = []
 
     for lib in libraries:
-        if not check_rules(lib.rules, config):
+        if not check_rules(lib.rules, config) or not lib.url:
             continue
 
         urls.append(lib.url)
@@ -122,6 +122,8 @@ def download_natives(
             if native.platform == config.platform_clean and check_rules(
                 native.rules, config
             ):
+                if not native.url:
+                    continue
                 urls.append(native.url)
                 paths.append(
                     os.path.join(tmpdir, f"{native.name.replace(':', '_')}.jar")

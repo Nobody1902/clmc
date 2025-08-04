@@ -89,16 +89,14 @@ class LauncherConfig:
         self.fabric_installers = os.path.join(
             self.minecraft_dir, "fabric_installers.json"
         )
-        self.fabric_loaders = os.path.join(self.minecraft_dir, "fabric_loaders.jsn")
+        self.fabric_loaders = os.path.join(self.minecraft_dir, "fabric_loaders.json")
         self.fabric_minecraft_versions = os.path.join(
             self.minecraft_dir, "fabric_minecraft_versions.json"
         )
 
-        # TODO: Forge
-        # self.forge_manifest = os.path.join(self.minecraft_dir, "forge_manifest.xml")
-        # self.forge_promotions = os.path.join(
-        #     self.minecraft_dir, "forge_promotions.json"
-        # )
+        # Forge
+        self.forge_manifest = os.path.join(self.minecraft_dir, "forge_manifest.xml")
+
         # Platform
         self.platform = platform
         self.platform_clean = (
