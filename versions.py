@@ -52,10 +52,10 @@ def join_libs(libs1: list[Library] | list[Native], libs2: list[Library] | list[N
     combined_libs = {}
 
     for lib in libs1:
-        combined_libs[lib.name] = lib
+        combined_libs[(lib.name, frozenset(lib.rules))] = lib
 
     for lib in libs2:
-        combined_libs[lib.name] = lib
+        combined_libs[(lib.name, frozenset(lib.rules))] = lib
 
     return list(combined_libs.values())
 
@@ -151,28 +151,61 @@ def parse_jvm_arguments(raw_version: dict):
 
 
 def parse_game_arguments(raw_version: dict):
-    game_args = []
+    game_args = {}
 
     if "arguments" not in raw_version or "game" not in raw_version["arguments"]:
         if "minecraftArguments" not in raw_version:
             return None
-        game_args = raw_version["minecraftArguments"].split(" ")
+        for a in raw_version["minecraftArguments"].split("--"):
+            if not a:
+                continue
+            key, value = f"--{a.removesuffix(' ')}".split(" ")
+            game_args[key] = value
+
         return game_args
 
-    for arg in raw_version["arguments"]["game"]:
-        if isinstance(arg, str):
-            game_args.append(arg)
-            continue
-        rules = []
-        if "rules" in arg:
-            rules = parse_rules(arg["rules"])
+    i = 0
+    while i < len(raw_version["arguments"]["game"]):
+        arg = raw_version["arguments"]["game"][i]
+        if i < len(raw_version["arguments"]["game"]) - 1:
+            next = raw_version["arguments"]["game"][i + 1]
+            if isinstance(arg, str):
+                if arg.startswith("--") and next.startswith("${"):
+                    game_args[arg] = next
+                else:
+                    game_args[arg] = None
+                    game_args[next] = None
 
-        if isinstance(arg["value"], list):
-            for a in arg["value"]:
-                game_args.append((a, rules))
+                i += 2
+                continue
+            rules = []
+            if "rules" in arg:
+                rules = parse_rules(arg["rules"])
 
-        elif isinstance(arg["value"], str):
-            game_args.append((arg["value"], rules))
+            if isinstance(arg["value"], list):
+                for a in arg["value"]:
+                    game_args[(a, frozenset(rules))] = None
+
+            elif isinstance(arg["value"], str):
+                game_args[(arg["value"], frozenset(rules))] = None
+        else:
+            if isinstance(arg, str):
+                game_args[arg] = None
+                i += 1
+                continue
+
+            rules = []
+            if "rules" in arg:
+                rules = parse_rules(arg["rules"])
+
+            if isinstance(arg["value"], list):
+                for a in arg["value"]:
+                    game_args[(a, frozenset(rules))] = None
+
+            elif isinstance(arg["value"], str):
+                game_args[(arg["value"], frozenset(rules))] = None
+
+        i += 1
 
     return game_args
 
@@ -180,7 +213,7 @@ def parse_game_arguments(raw_version: dict):
 class Version:
     version_id: str
     version_name: str
-    game_args: list[str]
+    game_args: dict[str, str | None]
     jvm_args: list[tuple[str, list[Rule]]] | None
     asset_index: str
     asset_json_url: str
@@ -190,6 +223,7 @@ class Version:
     main_class: str
     libraries: list[Library]
     natives: list[Native]
+    inherit_version: str | None
 
     def __init__(
         self,
@@ -224,8 +258,9 @@ class Version:
         libraries, natives = parse_libraries(raw_version)
 
         if "inheritsFrom" in raw_version:
-            inherit_version = raw_version["inheritsFrom"]
-            v = Version(inherit_version)
+            self.inherit_version = raw_version["inheritsFrom"]
+            assert self.inherit_version is not None
+            v = Version(self.inherit_version)
 
             asset_json_url = (
                 asset_json_url if asset_json_url is not None else v.asset_json_url
@@ -242,7 +277,7 @@ class Version:
                 jvm_args = v.jvm_args
 
             game_args = (
-                game_args + v.game_args if game_args is not None else v.game_args
+                game_args | v.game_args if game_args is not None else v.game_args
             )
             libraries = (
                 join_libs(v.libraries, libraries)
