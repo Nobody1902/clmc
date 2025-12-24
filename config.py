@@ -44,6 +44,7 @@ class GameConfig:
         launcher_version: str = "0.1",
         custom_jvm_args: list | None = None,
         custom_game_args: list | None = None,
+        custom_java_path: str | None = None,
         legacy_sounds: bool = False,
     ):
         self.launcher_name = launcher_name
@@ -51,6 +52,7 @@ class GameConfig:
         self.username = username
         self.custom_jvm_args = custom_jvm_args if custom_jvm_args else []
         self.custom_game_args = custom_game_args if custom_game_args else []
+        self.custom_java_path = custom_java_path
         # Legacy sound by using a proxy with sounds
         self.legacy_sounds = legacy_sounds
 

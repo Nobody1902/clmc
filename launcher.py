@@ -76,6 +76,10 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
         "bin",
         "java" + (".exe" if config.platform.startswith("windows") else ""),
     )
+
+    if config.game_config.custom_java_path:
+        java_exe = config.game_config.custom_java_path
+
     classpath_sep = ";" if config.platform.startswith("windows") else ":"
     classpath = ""
 
@@ -186,6 +190,7 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
         game_args[i] = game_args[i].replace("${version_type}", version_name)
         game_args[i] = game_args[i].replace("${quickPlayPath}", "logs")
 
+    print(java_exe)
     print(jvm_args)
     print(game_args)
     os.makedirs(os.path.join(config.game_dir, version_name), exist_ok=True)

@@ -5,6 +5,7 @@ import sys
 
 game_config = DEFAULT_GAME_CONFIG
 game_config.username = "nobody1902"
+# game_config.custom_java_path = "/bin/java"
 # game_config.legacy_sounds = True
 
 config = DEFAULT_CONFIG
