@@ -223,7 +223,7 @@ class Version:
     main_class: str
     libraries: list[Library]
     natives: list[Native]
-    inherit_version: str | None
+    inherit_version: str | None = None
 
     def __init__(
         self,
