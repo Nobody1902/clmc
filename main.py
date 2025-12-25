@@ -1,4 +1,5 @@
 import fabric
+import forge
 import launcher
 from config import DEFAULT_CONFIG, DEFAULT_GAME_CONFIG
 import sys
@@ -14,11 +15,17 @@ config.game_config = game_config
 # config.platform = "windows-x64"
 # config.platform_clean = "windows"
 
-if len(sys.argv) > 2:
-    if sys.argv[1] == "install":
-        launcher.install_version(sys.argv[2], config=config)
-    elif sys.argv[1] == "launch":
-        launcher.launch(sys.argv[2], config=config)
-    elif sys.argv[1] == "fabric":
-        version = fabric.install(sys.argv[2], config=config)
-        print(version)
+# forge.install("1.18.2", "40.3.12", config=config)
+# forge.install("1.12.2", "14.23.5.2859", config=config)
+# launcher.launch("forge-1.21.11-61.0.3", config=config)
+# launcher.launch("forge-1.18.2-40.3.12", config=config)
+launcher.launch("forge-1.12.2-14.23.5.2859", config=config)
+
+# if len(sys.argv) > 2:
+#     if sys.argv[1] == "install":
+#         launcher.install_version(sys.argv[2], config=config)
+#     elif sys.argv[1] == "launch":
+#         launcher.launch(sys.argv[2], config=config)
+#     elif sys.argv[1] == "fabric":
+#         version = fabric.install(sys.argv[2], config=config)
+#         print(version)

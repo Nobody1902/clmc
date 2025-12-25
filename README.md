@@ -1,8 +1,11 @@
 # CLMC
 
+> [!WARNING]
+> Forge is broken, after installation it doesn't launch!
+> This is probably caused by improper patching.
+
 - A custom minecraft launcher written in python.
 - All fabric versions are supported.
-- Forge support is planned.
 - Authentication isn't supported.
 
 ## Installation
