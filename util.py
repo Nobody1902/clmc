@@ -18,6 +18,9 @@ def download_file(
         response = requests.get(url, stream=True)
         total_size = int(response.headers.get("content-length", 0))
 
+        if not response.ok:
+            raise requests.exceptions.MissingSchema()
+
         with (
             open(dest_path, "wb") as file,
             tqdm(
@@ -79,3 +82,10 @@ def zipfile_exists(zf: zipfile.ZipFile, path: str):
         or path.endswith("/")
         and any(f.startswith(path) for f in file_list)
     )
+
+
+def extract_zipfile(zf: zipfile.ZipFile, file: str, path: str):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with zf.open(file, "r") as f:
+        with open(path, "wb") as o:
+            o.write(f.read())

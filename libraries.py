@@ -80,15 +80,16 @@ def check_rules(rules: list[Rule], config: LauncherConfig = DEFAULT_CONFIG):
 
 # Only used by forge (for now)
 def get_library_path(lib: str, config: LauncherConfig = DEFAULT_CONFIG):
+    if "@" in lib:
+        lib, fileend = lib.split("@")
+    else:
+        fileend = "jar"
+
     libpath = os.path.join(config.library_dir, config.platform)
     parts = lib.split(":")
     base_path, libname, version = parts[0:3]
     for i in base_path.split("."):
         libpath = os.path.join(libpath, i)
-    try:
-        version, fileend = version.split("@")
-    except ValueError:
-        fileend = "jar"
 
     filename = (
         f"{libname}-{version}{''.join(map(lambda p: f'-{p}', parts[3:]))}.{fileend}"

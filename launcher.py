@@ -192,6 +192,7 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
 
     print(java_exe)
     print(jvm_args)
+    print(version.main_class)
     print(game_args)
     os.makedirs(os.path.join(config.game_dir, version_name), exist_ok=True)
 

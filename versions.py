@@ -69,12 +69,12 @@ def get_lib_path(lib: dict):
     return os.path.join(*path.split("."), libname, version, f"{libname}-{version}.jar")
 
 
-def parse_libraries(raw_version: dict):
+def parse_libraries(raw_version: dict) -> tuple[list[Library], list[Native]]:
     natives = []
     libraries = []
 
     if "libraries" not in raw_version:
-        return (None, None)
+        return ([], [])
 
     for lib in raw_version["libraries"]:
         # Parse natives
@@ -289,7 +289,6 @@ class Version:
         assert asset_json_url is not None
         assert asset_index is not None
         assert client_url is not None
-        assert server_url is not None
         assert java_version is not None
         assert main_class is not None
         assert game_args is not None
