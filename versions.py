@@ -49,6 +49,8 @@ def get_lib_url(lib: dict):
 
 
 def join_libs(libs1: list[Library] | list[Native], libs2: list[Library] | list[Native]):
+    return libs1 + libs2
+
     combined_libs = {}
 
     for lib in libs1:

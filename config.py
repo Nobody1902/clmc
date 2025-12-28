@@ -71,6 +71,7 @@ class LauncherConfig:
         library_dir: str = "libraries",
         assets_dir: str = "assets",
         game_dir: str = "game",
+        instances_dir: str = "instances",
         platform=_get_platform(),
         architecture=_get_architecture(),
     ):
@@ -83,6 +84,7 @@ class LauncherConfig:
         self.library_dir = os.path.join(self.minecraft_dir, library_dir)
         self.assets_dir = os.path.join(self.minecraft_dir, assets_dir)
         self.game_dir = os.path.join(self.minecraft_dir, game_dir)
+        self.instances_dir = os.path.join(self.minecraft_dir, instances_dir)
         # Files
         self.version_manifest = os.path.join(
             self.minecraft_dir, "version_manifest.json"

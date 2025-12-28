@@ -1,6 +1,7 @@
 import fabric
 import forge
 import launcher
+import mrpack
 from config import DEFAULT_CONFIG, DEFAULT_GAME_CONFIG
 import sys
 
@@ -21,6 +22,8 @@ config.game_config = game_config
 # launcher.launch("forge-1.21.11-61.0.3", config=config)
 # launcher.launch("forge-1.18.2-40.3.12", config=config)
 # launcher.launch("forge-1.12.2-14.23.5.2859", config=config)
+
+# mrpack.install(sys.argv[1])
 
 if len(sys.argv) > 2:
     if sys.argv[1] == "install":
