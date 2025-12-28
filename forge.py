@@ -39,12 +39,13 @@ def _run_processors(
     version: versions.Version,
     installer_path: str,
     lzma_path: str,
+    side: str,
     config: LauncherConfig = DEFAULT_CONFIG,
 ):
     arguments = {}
 
     for key, value in data.items():
-        client_value = value.get("client")
+        client_value = value.get(side)
         # server_value = value.get("server")
 
         if client_value.startswith("[") and client_value.endswith("]"):
@@ -58,7 +59,7 @@ def _run_processors(
         "{MINECRAFT_JAR}": os.path.join(
             config.versions_dir, config.platform, version.version_name, "client.jar"
         ),
-        "{SIDE}": "client",
+        "{SIDE}": side,
         "{INSTALLER}": installer_path,
         "{BINPATCH}": lzma_path,
     }
@@ -67,8 +68,8 @@ def _run_processors(
         arguments["{ROOT}"] = root
 
         for p in processors:
-            # Skip server processors
-            if "client" not in p.get("sides", ["client"]):
+            # Skip unwanted processors
+            if side not in p.get("sides", [side]):
                 continue
 
             jar_path = libraries.get_library_path(p["jar"], config)
@@ -87,14 +88,10 @@ def _run_processors(
             args = []
             for a in p["args"]:
                 v = arguments.get(a, a)
-                if a.startswith("[") and a.endswith("]"):
-                    args.append(libraries.get_library_path(a[1:-1], config))
+                if v.startswith("[") and v.endswith("]"):
+                    args.append(libraries.get_library_path(v[1:-1], config))
                 else:
-                    args.append(a)
-
-            for i in range(len(args)):
-                for k, v in arguments.items():
-                    args[i] = args[i].replace(k, v)
+                    args.append(v)
 
             java_exe = os.path.join(
                 config.runtime_dir,
@@ -207,6 +204,7 @@ def install(
                 version,
                 installer,
                 lzma_path,
+                "client",
             )
 
     return f"forge-{minecraft_version}-{forge_version}"

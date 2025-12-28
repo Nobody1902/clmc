@@ -52,10 +52,10 @@ def join_libs(libs1: list[Library] | list[Native], libs2: list[Library] | list[N
     combined_libs = {}
 
     for lib in libs1:
-        combined_libs[(lib.name, frozenset(lib.rules))] = lib
+        combined_libs[(lib.name, lib.classifier, frozenset(lib.rules))] = lib
 
     for lib in libs2:
-        combined_libs[(lib.name, frozenset(lib.rules))] = lib
+        combined_libs[(lib.name, lib.classifier, frozenset(lib.rules))] = lib
 
     return list(combined_libs.values())
 
@@ -116,12 +116,25 @@ def parse_libraries(raw_version: dict) -> tuple[list[Library], list[Native]]:
         url = get_lib_url(lib)
         lib_path = get_lib_path(lib)
 
+        classifier = None
+        if len(split_name) > 3:
+            classifier = split_name[3]
+
         rules = []
 
         if "rules" in lib:
             rules = parse_rules(lib["rules"])
 
-        libraries.append(Library(split_name[1], split_name[-1], url, lib_path, rules))
+        libraries.append(
+            Library(
+                split_name[1],
+                split_name[-1],
+                url,
+                lib_path,
+                classifier=classifier,
+                rules=rules,
+            )
+        )
 
     return (libraries, natives)
 

@@ -28,13 +28,26 @@ class Library:
     url: str
     path: str
     rules: list[Rule]
+    classifier: str | None
 
-    def __init__(self, name: str, version: str, url: str, path: str, rules=[]) -> None:
+    def __init__(
+        self,
+        name: str,
+        version: str,
+        url: str,
+        path: str,
+        classifier: str | None = None,
+        rules=[],
+    ) -> None:
         self.name = name
         self.version = version
         self.url = url
         self.path = path
+        self.classifier = classifier
         self.rules = rules
+
+    def __repr__(self) -> str:
+        return f"{self.name}-{self.version}"
 
 
 class Native:
@@ -43,6 +56,7 @@ class Native:
     version: str
     platform: str
     rules: list[Rule]
+    classifier = None
 
     def __init__(
         self, name: str, version: str, url: str, platform: str, rules=[]
@@ -52,6 +66,9 @@ class Native:
         self.url = url
         self.rules = rules
         self.platform = platform
+
+    def __repr__(self) -> str:
+        return f"{self.name}-{self.version}"
 
 
 def check_rules(rules: list[Rule], config: LauncherConfig = DEFAULT_CONFIG):

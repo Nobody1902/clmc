@@ -55,9 +55,11 @@ def download_files(urls: list[str], files: list[str], desc: str = "Downloading")
 
 def get_jar_mainclass(jar: str):
     zf = zipfile.ZipFile(jar)
-    lines = []
+
     with zf.open("META-INF/MANIFEST.MF") as man:
         lines = man.read().decode().splitlines()
+
+    zf.close()
 
     for line in lines:
         if line.startswith("Main-Class: "):
