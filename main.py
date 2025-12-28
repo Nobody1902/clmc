@@ -24,15 +24,16 @@ config.game_config = game_config
 # launcher.launch("forge-1.12.2-14.23.5.2859", config=config)
 
 # mrpack.install(sys.argv[1])
+launcher.launch_instance(sys.argv[1], config=config)
 
-if len(sys.argv) > 2:
-    if sys.argv[1] == "install":
-        launcher.install_version(sys.argv[2], config=config)
-    elif sys.argv[1] == "launch":
-        launcher.launch(sys.argv[2], config=config)
-    elif sys.argv[1] == "fabric":
-        version = fabric.install(sys.argv[2], config=config)
-        print(version)
-    elif sys.argv[1] == "forge":
-        version = forge.install(sys.argv[2], sys.argv[3], config=config)
-        print(version)
+# if len(sys.argv) > 2:
+#     if sys.argv[1] == "install":
+#         launcher.install_version(sys.argv[2], config=config)
+#     elif sys.argv[1] == "launch":
+#         launcher.launch(sys.argv[2], config=config)
+#     elif sys.argv[1] == "fabric":
+#         version = fabric.install(sys.argv[2], config=config)
+#         print(version)
+#     elif sys.argv[1] == "forge":
+#         version = forge.install(sys.argv[2], sys.argv[3], config=config)
+#         print(version)

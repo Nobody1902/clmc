@@ -1,3 +1,4 @@
+import json
 from util import download_file, remove_duplicates
 from manifest import VersionManifest
 import versions
@@ -61,13 +62,37 @@ def install_version(
     return version
 
 
-def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
+def launch_instance(name: str, config: LauncherConfig = DEFAULT_CONFIG):
+    instance_dir = os.path.join(config.instances_dir, name)
+    if not os.path.exists(instance_dir):
+        print("Instance doesn't exist!")
+        return -1
+
+    with open(os.path.join(instance_dir, "instance.json")) as f:
+        instance = json.load(f)
+
+    version = instance["minecraft"]
+
+    launch(version, custom_game_dir=os.path.join(config.game_dir, name), config=config)
+
+
+def launch(
+    version_name: str,
+    custom_game_dir: str | None = None,
+    config: LauncherConfig = DEFAULT_CONFIG,
+):
     version_dir = os.path.join(config.versions_dir, config.platform, version_name)
     if not os.path.exists(version_dir):
         print("Version is not installed!")
         return -1
 
     version = versions.Version(version_name, config)
+
+    game_dir = (
+        custom_game_dir
+        if custom_game_dir is not None
+        else os.path.join(config.game_dir, version_name)
+    )
 
     java_exe = os.path.join(
         config.runtime_dir,
@@ -170,9 +195,7 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
             "${auth_player_name}", config.game_config.username
         )  # Offline mode
         game_args[i] = game_args[i].replace("${version_name}", version_name)
-        game_args[i] = game_args[i].replace(
-            "${game_directory}", os.path.join(config.game_dir, version_name)
-        )
+        game_args[i] = game_args[i].replace("${game_directory}", game_dir)
         game_args[i] = game_args[i].replace("${assets_root}", config.assets_dir)
         game_args[i] = game_args[i].replace("${assets_index_name}", version.asset_index)
         game_args[i] = game_args[i].replace(
@@ -199,5 +222,5 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
     # Launch the game
     subprocess.call(
         [java_exe, *jvm_args, version.main_class, *game_args],
-        cwd=os.path.join(config.game_dir, version_name),
+        cwd=game_dir,
     )

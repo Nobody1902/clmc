@@ -49,6 +49,7 @@ def get_lib_url(lib: dict):
 
 
 def join_libs(libs1: list[Library] | list[Native], libs2: list[Library] | list[Native]):
+    # A.N. is genious
     return libs1 + libs2
 
     combined_libs = {}
@@ -318,7 +319,7 @@ class Version:
         self.main_class = main_class
         self.jvm_args = jvm_args
         self.game_args = game_args
-        self.libraries = libraries
+        self.libraries = libraries  # pyright: ignore
         self.natives = natives
 
     def __eq__(self, value: object, /) -> bool:
