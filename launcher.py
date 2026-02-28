@@ -1,3 +1,4 @@
+import json
 from util import download_file, remove_duplicates
 from manifest import VersionManifest
 import versions
@@ -61,13 +62,37 @@ def install_version(
     return version
 
 
-def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
+def launch_instance(name: str, config: LauncherConfig = DEFAULT_CONFIG):
+    instance_dir = os.path.join(config.instances_dir, name)
+    if not os.path.exists(instance_dir):
+        print("Instance doesn't exist!")
+        return -1
+
+    with open(os.path.join(instance_dir, "instance.json")) as f:
+        instance = json.load(f)
+
+    version = instance["minecraft"]
+
+    launch(version, custom_game_dir=os.path.join(config.game_dir, name), config=config)
+
+
+def launch(
+    version_name: str,
+    custom_game_dir: str | None = None,
+    config: LauncherConfig = DEFAULT_CONFIG,
+):
     version_dir = os.path.join(config.versions_dir, config.platform, version_name)
     if not os.path.exists(version_dir):
         print("Version is not installed!")
         return -1
 
     version = versions.Version(version_name, config)
+
+    game_dir = (
+        custom_game_dir
+        if custom_game_dir is not None
+        else os.path.join(config.game_dir, version_name)
+    )
 
     java_exe = os.path.join(
         config.runtime_dir,
@@ -90,18 +115,20 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
             os.path.join(config.library_dir, config.platform, lib.path) + classpath_sep
         )
 
-    if version.inherit_version:
-        classpath += (
-            os.path.join(
-                config.versions_dir,
-                config.platform,
-                version.inherit_version,
-                "client.jar",
-            )
-            + classpath_sep
+    if version.inherit_version and version.has_own_jvm_args:
+        # Modern modded version (e.g. Forge 1.13+) manages its own class loading
+        # via BootstrapLauncher and the library directory - no client.jar needed
+        classpath = classpath.rstrip(classpath_sep)
+    elif version.inherit_version:
+        # Old modded version (e.g. Forge 1.12.2) needs the parent's client.jar
+        classpath += os.path.join(
+            config.versions_dir,
+            config.platform,
+            version.inherit_version,
+            "client.jar",
         )
-
-    classpath += os.path.join(version_dir, "client.jar")
+    else:
+        classpath += os.path.join(version_dir, "client.jar")
 
     jvm_args: list[str] = []
 
@@ -115,7 +142,7 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
         jvm_args.append("-cp")
         jvm_args.append("${classpath}")
     else:
-        for arg in remove_duplicates(version.jvm_args):
+        for arg in version.jvm_args:
             if isinstance(arg, str):
                 jvm_args.append(arg)
                 continue
@@ -140,7 +167,7 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
         jvm_args[i] = jvm_args[i].replace("${classpath}", classpath)
 
         # Forge
-        jvm_args[i] = jvm_args[i].replace("${library_directory}", config.library_dir)
+        jvm_args[i] = jvm_args[i].replace("${library_directory}", os.path.join(config.library_dir, config.platform))
         jvm_args[i] = jvm_args[i].replace("${classpath_separator}", classpath_sep)
         jvm_args[i] = jvm_args[i].replace("${version_name}", version.version_id)
 
@@ -170,9 +197,7 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
             "${auth_player_name}", config.game_config.username
         )  # Offline mode
         game_args[i] = game_args[i].replace("${version_name}", version_name)
-        game_args[i] = game_args[i].replace(
-            "${game_directory}", os.path.join(config.game_dir, version_name)
-        )
+        game_args[i] = game_args[i].replace("${game_directory}", game_dir)
         game_args[i] = game_args[i].replace("${assets_root}", config.assets_dir)
         game_args[i] = game_args[i].replace("${assets_index_name}", version.asset_index)
         game_args[i] = game_args[i].replace(
@@ -199,5 +224,5 @@ def launch(version_name: str, config: LauncherConfig = DEFAULT_CONFIG):
     # Launch the game
     subprocess.call(
         [java_exe, *jvm_args, version.main_class, *game_args],
-        cwd=os.path.join(config.game_dir, version_name),
+        cwd=game_dir,
     )

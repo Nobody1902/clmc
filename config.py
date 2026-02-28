@@ -71,6 +71,7 @@ class LauncherConfig:
         library_dir: str = "libraries",
         assets_dir: str = "assets",
         game_dir: str = "game",
+        instances_dir: str = "instances",
         platform=_get_platform(),
         architecture=_get_architecture(),
     ):
@@ -83,6 +84,7 @@ class LauncherConfig:
         self.library_dir = os.path.join(self.minecraft_dir, library_dir)
         self.assets_dir = os.path.join(self.minecraft_dir, assets_dir)
         self.game_dir = os.path.join(self.minecraft_dir, game_dir)
+        self.instances_dir = os.path.join(self.minecraft_dir, instances_dir)
         # Files
         self.version_manifest = os.path.join(
             self.minecraft_dir, "version_manifest.json"
@@ -101,13 +103,15 @@ class LauncherConfig:
 
         # Platform
         self.platform = platform
-        self.platform_clean = (
-            self.platform.replace("-x64", "").replace("-x86", "").replace("-arm64", "")
-        )
         self.architecture = architecture
 
     minecraft_dir: str
     profile_dir: str
+
+    def platform_clean(self) -> str:
+        return (
+            self.platform.replace("-x64", "").replace("-x86", "").replace("-arm64", "")
+        )
 
     def __repr__(self):
         return f"{self.minecraft_dir}"

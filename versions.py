@@ -49,13 +49,16 @@ def get_lib_url(lib: dict):
 
 
 def join_libs(libs1: list[Library] | list[Native], libs2: list[Library] | list[Native]):
+    # A.N. is genious
+    return libs1 + libs2
+
     combined_libs = {}
 
     for lib in libs1:
-        combined_libs[(lib.name, frozenset(lib.rules))] = lib
+        combined_libs[(lib.name, lib.classifier, frozenset(lib.rules))] = lib
 
     for lib in libs2:
-        combined_libs[(lib.name, frozenset(lib.rules))] = lib
+        combined_libs[(lib.name, lib.classifier, frozenset(lib.rules))] = lib
 
     return list(combined_libs.values())
 
@@ -116,12 +119,25 @@ def parse_libraries(raw_version: dict) -> tuple[list[Library], list[Native]]:
         url = get_lib_url(lib)
         lib_path = get_lib_path(lib)
 
+        classifier = None
+        if len(split_name) > 3:
+            classifier = split_name[3]
+
         rules = []
 
         if "rules" in lib:
             rules = parse_rules(lib["rules"])
 
-        libraries.append(Library(split_name[1], split_name[-1], url, lib_path, rules))
+        libraries.append(
+            Library(
+                split_name[1],
+                split_name[-1],
+                url,
+                lib_path,
+                classifier=classifier,
+                rules=rules,
+            )
+        )
 
     return (libraries, natives)
 
@@ -224,6 +240,7 @@ class Version:
     libraries: list[Library]
     natives: list[Native]
     inherit_version: str | None = None
+    has_own_jvm_args: bool = False
 
     def __init__(
         self,
@@ -253,6 +270,7 @@ class Version:
         main_class = raw_version.get("mainClass", None)
 
         jvm_args = parse_jvm_arguments(raw_version)
+        self.has_own_jvm_args = jvm_args is not None
         game_args = parse_game_arguments(raw_version)
 
         libraries, natives = parse_libraries(raw_version)
@@ -273,7 +291,7 @@ class Version:
 
             if jvm_args and v.jvm_args:
                 jvm_args = jvm_args + v.jvm_args
-            else:
+            elif not jvm_args:
                 jvm_args = v.jvm_args
 
             game_args = (
@@ -303,7 +321,7 @@ class Version:
         self.main_class = main_class
         self.jvm_args = jvm_args
         self.game_args = game_args
-        self.libraries = libraries
+        self.libraries = libraries  # pyright: ignore
         self.natives = natives
 
     def __eq__(self, value: object, /) -> bool:
