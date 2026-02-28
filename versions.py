@@ -240,6 +240,7 @@ class Version:
     libraries: list[Library]
     natives: list[Native]
     inherit_version: str | None = None
+    has_own_jvm_args: bool = False
 
     def __init__(
         self,
@@ -269,6 +270,7 @@ class Version:
         main_class = raw_version.get("mainClass", None)
 
         jvm_args = parse_jvm_arguments(raw_version)
+        self.has_own_jvm_args = jvm_args is not None
         game_args = parse_game_arguments(raw_version)
 
         libraries, natives = parse_libraries(raw_version)
@@ -289,7 +291,7 @@ class Version:
 
             if jvm_args and v.jvm_args:
                 jvm_args = jvm_args + v.jvm_args
-            else:
+            elif not jvm_args:
                 jvm_args = v.jvm_args
 
             game_args = (

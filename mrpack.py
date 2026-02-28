@@ -1,6 +1,5 @@
 import os
 import shutil
-import subprocess
 import tempfile
 import zipfile
 import json
@@ -26,7 +25,7 @@ def _install_mod_loader(
             raise Exception(f"Unimplemented mod loader: {m}")
 
 
-def install(mrpack: str, config: LauncherConfig = DEFAULT_CONFIG) -> str:
+def install(mrpack: str, config: LauncherConfig = DEFAULT_CONFIG) -> tuple[str, str]:
     with zipfile.ZipFile(mrpack) as zf:
         with zf.open("modrinth.index.json") as j:
             manifest = json.load(j)
@@ -83,4 +82,4 @@ def install(mrpack: str, config: LauncherConfig = DEFAULT_CONFIG) -> str:
                 os.path.join(tmpdir, "overrides"), game_dir, dirs_exist_ok=True
             )
 
-    return version
+    return (version, name)

@@ -115,18 +115,20 @@ def launch(
             os.path.join(config.library_dir, config.platform, lib.path) + classpath_sep
         )
 
-    if version.inherit_version:
-        classpath += (
-            os.path.join(
-                config.versions_dir,
-                config.platform,
-                version.inherit_version,
-                "client.jar",
-            )
-            + classpath_sep
+    if version.inherit_version and version.has_own_jvm_args:
+        # Modern modded version (e.g. Forge 1.13+) manages its own class loading
+        # via BootstrapLauncher and the library directory - no client.jar needed
+        classpath = classpath.rstrip(classpath_sep)
+    elif version.inherit_version:
+        # Old modded version (e.g. Forge 1.12.2) needs the parent's client.jar
+        classpath += os.path.join(
+            config.versions_dir,
+            config.platform,
+            version.inherit_version,
+            "client.jar",
         )
-
-    classpath += os.path.join(version_dir, "client.jar")
+    else:
+        classpath += os.path.join(version_dir, "client.jar")
 
     jvm_args: list[str] = []
 
@@ -140,7 +142,7 @@ def launch(
         jvm_args.append("-cp")
         jvm_args.append("${classpath}")
     else:
-        for arg in remove_duplicates(version.jvm_args):
+        for arg in version.jvm_args:
             if isinstance(arg, str):
                 jvm_args.append(arg)
                 continue
@@ -165,7 +167,7 @@ def launch(
         jvm_args[i] = jvm_args[i].replace("${classpath}", classpath)
 
         # Forge
-        jvm_args[i] = jvm_args[i].replace("${library_directory}", config.library_dir)
+        jvm_args[i] = jvm_args[i].replace("${library_directory}", os.path.join(config.library_dir, config.platform))
         jvm_args[i] = jvm_args[i].replace("${classpath_separator}", classpath_sep)
         jvm_args[i] = jvm_args[i].replace("${version_name}", version.version_id)
 

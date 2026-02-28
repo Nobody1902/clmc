@@ -76,7 +76,7 @@ def check_rules(rules: list[Rule], config: LauncherConfig = DEFAULT_CONFIG):
         action = rule.action
 
         if rule.os != "":
-            if not config.platform_clean == rule.os and action:
+            if not config.platform_clean() == rule.os and action:
                 return False
         if rule.arch != "":
             if not config.architecture == rule.os and action:
@@ -137,7 +137,7 @@ def download_natives(
 
     with tempfile.TemporaryDirectory() as tmpdir:
         for native in natives:
-            if native.platform == config.platform_clean and check_rules(
+            if native.platform == config.platform_clean() and check_rules(
                 native.rules, config
             ):
                 if not native.url:

@@ -103,13 +103,15 @@ class LauncherConfig:
 
         # Platform
         self.platform = platform
-        self.platform_clean = (
-            self.platform.replace("-x64", "").replace("-x86", "").replace("-arm64", "")
-        )
         self.architecture = architecture
 
     minecraft_dir: str
     profile_dir: str
+
+    def platform_clean(self) -> str:
+        return (
+            self.platform.replace("-x64", "").replace("-x86", "").replace("-arm64", "")
+        )
 
     def __repr__(self):
         return f"{self.minecraft_dir}"

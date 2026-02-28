@@ -159,7 +159,7 @@ def install(
                 "net",
                 "minecraftforge",
                 "forge",
-                version_name,
+                version_id,
             )
             try:
                 extract_zipfile(
