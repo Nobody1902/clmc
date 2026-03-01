@@ -304,10 +304,12 @@ class Version:
             )
             natives = v.natives + natives if natives is not None else v.natives
 
+        if not java_version:
+            java_version = "jre-legacy"
+
         assert asset_json_url is not None
         assert asset_index is not None
         assert client_url is not None
-        assert java_version is not None
         assert main_class is not None
         assert game_args is not None
         assert libraries is not None

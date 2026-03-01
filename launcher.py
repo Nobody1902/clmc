@@ -55,7 +55,7 @@ def install_version(
         )
     )
 
-    version = _install(f"{version_id}", config)
+    version = _install(version_id, config)
 
     print(f"Successfully installed {version_id}")
 
@@ -167,7 +167,9 @@ def launch(
         jvm_args[i] = jvm_args[i].replace("${classpath}", classpath)
 
         # Forge
-        jvm_args[i] = jvm_args[i].replace("${library_directory}", os.path.join(config.library_dir, config.platform))
+        jvm_args[i] = jvm_args[i].replace(
+            "${library_directory}", os.path.join(config.library_dir, config.platform)
+        )
         jvm_args[i] = jvm_args[i].replace("${classpath_separator}", classpath_sep)
         jvm_args[i] = jvm_args[i].replace("${version_name}", version.version_id)
 

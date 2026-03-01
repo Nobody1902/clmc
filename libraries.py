@@ -87,7 +87,6 @@ def check_rules(rules: list[Rule], config: LauncherConfig = DEFAULT_CONFIG):
 
         # TODO: Implement version rule
         if rule.version != "":
-            print(rule.version)
             return True
 
         # assert rule.version == ""
